@@ -1,0 +1,271 @@
+-- Procura uma coluna específica na tabela do banco de dados. 
+select
+    c.relname,
+    a.attname as "Column",
+    pg_catalog.format_type(a.atttypid, a.atttypmod) as "Datatype"
+from
+    pg_catalog.pg_attribute a
+    inner join pg_stat_user_tables c on a.attrelid = c.relid
+where
+    a.attnum > 0
+    and not a.attisdropped
+    and a.attname like '%Nome da coluna aqui%'
+order by
+    c.relname,
+    a.attname;
+
+-- Função para substituir caracteres
+
+create or replace function w_fc_troca_caracter(texto text) 
+    returns varchar as $BODY$ declare strCaracteres text;
+
+strCaracteresTrocar text;
+strNovoCaracter text default '';
+strRetirar char(1);
+strTrocar char(1);
+strA char(1);
+strCaracter char(1);
+intTamanhoTexto integer;
+intContador integer default 0;
+intAchou integer default 0;
+
+begin 
+strCaracteres := " ÚúÙùÛûÂâÁáÀàÃãéÉêÊèÈóÓôÔòÒõÕíÍìÌîÎçÇ°ºª\'";
+strCaracteresTrocar := " UuUuUuAaAaAaAaeEeEeEoOoOoOoOiIiIiIcCooo ";
+
+intTamanhoTexto := length(texto);
+
+while (intContador <= (intTamanhoTexto -1)) 
+loop strCaracter := substring(texto, intContador + 1, 1);
+
+    raise notice 'CaracterInicial: %', strCaracter;
+
+    intAchou = 0;
+
+    if (strCaracter <> ' ') then for num IN 0..length(strCaracteres) 
+        loop
+            strRetirar := substring(strCaracteres, num, 1);
+
+            strTrocar := substring(strCaracteresTrocar, num, 1);
+
+            if (strRetirar = strCaracter) then intAchou = 1;
+
+                num = length(strCaracteres) + 1;
+                strA = strTrocar;
+
+            end if;
+
+        end loop;
+
+        if (intAchou = 0) then strNovoCaracter := strNovoCaracter || strCaracter;
+
+        else strNovoCaracter := strNovoCaracter || strA;
+
+        end if;
+
+    else strNovoCaracter := strNovoCaracter || ' ';
+
+    end if;
+
+    intContador := intContador + 1;
+
+end loop;
+
+return strNovoCaracter;
+
+end;
+
+$ BODY $ LANGUAGE plpgsql;
+
+-- Lista os processos ativos
+
+select * from  pg_stat_activity where state <> 'idle';
+
+-- Mata um processo postgresql recebendo o pid como parâmetro
+
+select pg_terminate_backend(pid);
+
+-- Mata os processos
+
+select pg_terminate_backend(pid) from pg_stat_activity where datname = 'nome da base';
+
+-- Lista as rotinas que os usuários estão acessando no momento (E-cidade)
+
+/*
+select
+	datname as base,
+	pid,
+	(
+		select
+			id_usuario || ' - ' || login
+		from
+			db_usuarios
+		where
+			id_usuario = (split_part( application_name,
+			'_',
+			2 ))::integer
+	) as idusuario_login,
+	case
+		when split_part(application_name,
+		'_',
+		3)::integer <> 0 then fc_montamenu((
+		select
+			funcao
+		from
+			db_itensmenu
+		where
+			id_item = split_part(application_name,
+			'_',
+			3)::integer ))
+		else ''
+	end as itenmenu,
+	case
+		when split_part(application_name,
+		'_',
+		3)::integer <> 0 then (
+		select
+			funcao
+		from
+			db_itensmenu
+		where
+			id_item = split_part(application_name,
+			'_',
+			3)::integer )
+		else ''
+	end as programa,
+	case
+		when split_part(application_name,
+		'_',
+		3)::integer <> 0 then split_part(application_name,
+		'_',
+		3)::integer
+		else null
+	end as item_menu,
+	state,
+	to_char(backend_start,
+	'DD/MM HH24:MI')
+from
+	pg_stat_activity
+where
+	application_name ilike 'ecidade_%'
+	and pid <> pg_backend_pid()
+order by
+	8 desc;
+*/
+
+-- Remove zeros à esquerda de um valor
+
+trim(leading '0' from nome_do_campo) as nome_do_campo;
+
+-- Remove zeros à direita de um valor
+
+trim(trailing '0' from nome_do_campo) as nome_do_campo;
+
+-- Dump dos inserts dos dados de uma tabela
+
+pg_dump -h localhost -p 5432 -U username -W --table="tablename" --data-only --column-inserts database > /tmp/backup.sql
+
+-- Importação do dump dos inserts
+
+psql -U username -d database -h localhost -p 5432 -f arquivo.sql
+
+-- Dump e compactação de base
+
+pg_dump -U ecidade database | gzip -c > database.gz
+
+-- Restore de base compactada
+
+gunzip -c database.gz | pg_restore -d banco
+
+-- Dump
+
+pg_dump --host localhost --port 5432 --username username --schema schemaname database > 2018-09-25.sql
+
+pg_dump -h localhost -U my_user -d my_database -n public -s > migration.sql
+
+-- Retorna o tamanho da tabela
+
+select 
+    relname as "Table",
+    pg_size_pretty(pg_total_relation_size(relid)) as "Size",
+    pg_size_pretty(pg_total_relation_size(relid) - pg_relation_size(relid)) as "External Size"
+from pg_catalog.pg_statio_user_tables 
+order by pg_total_relation_size(relid) desc;
+
+-- Row counts for all tables postgresql
+
+select
+	nspname as schemaname,
+	relname,
+	reltuples
+from
+	pg_class C
+left join pg_namespace N on
+	(N.oid = C.relnamespace)
+where
+	nspname not in ('pg_catalog', 'information_schema')
+	    and relkind = 'r'
+order by
+	reltuples desc;
+
+select
+	relname as objectname,
+	relkind as objecttype,
+	reltuples as "#entries",
+	pg_size_pretty(relpages::bigint * 8 * 1024) as size
+from
+	pg_class
+where
+	relpages >= 8
+order by
+	relpages desc;
+
+select
+	schema_name,
+	pg_size_pretty(sum(table_size)::bigint) as "disk space",
+	(sum(table_size) / pg_database_size(current_database())) * 100
+as "percent"
+from
+	(
+	select
+		pg_catalog.pg_namespace.nspname as schema_name,
+		pg_relation_size(pg_catalog.pg_class.oid) as table_size
+	from
+		pg_catalog.pg_class
+	join pg_catalog.pg_namespace 
+on
+		relnamespace = pg_catalog.pg_namespace.oid
+) t
+group by
+	schema_name
+order by
+
+-- Exporta registros de um select para um arquivo CSV
+
+COPY (Select * From foo) TO '/tmp/test.csv' WITH CSV DELIMITER ',' HEADER;
+
+-- Otimizar base de dados
+
+vacuum full freeze verbose analyze;
+
+-- Salvar função PL
+
+COPY (SELECT pg_get_functiondef('functionName'::regproc)) TO '/tmp/arquivo.sql';
+
+-- Para o E-cidade
+
+/*
+select fc_startsession();
+select fc_putsession('DB_anousu', '2018');
+select fc_putsession('DB_debugon', '1');
+*/
+
+-- Gerar um range de datas a partir de uma data inicial até uma data final.
+
+SELECT 
+    date_trunc('day', dd):: date
+FROM generate_series (
+    '2007-02-01'::timestamp 
+    , '2007-03-10'::timestamp
+    , '1 day'::interval
+) dd;
