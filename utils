@@ -1,0 +1,188 @@
+#### Busca e substituição de caracteres #################################################
+
+:%s/caracter_procurado/caracter_substituto/g
+
+# =======================================================================================
+
+#### Edita um arquivo que precisa de permissão de root sem sair do vim. #################
+
+:w !sudo tee %
+
+# Obs: para sair do arquivo :q!
+
+# =======================================================================================
+
+#### Listar arquivos excluindo alguns diretórios  #######################################
+
+find . -name '*.php' -mtime -5 -not \( -path "./modification/*" -o -path "./tmp/*" \)
+
+# =======================================================================================
+
+#### Procura uma expressão em uma lista de arquivos #####################################
+
+find . -name "*.php" -exec fgrep -rino "js_abre" {} \; -print
+
+# =======================================================================================
+
+#### Lê um txt com uma lista de arquivos e copia para um diretório específico ###########
+for i in `cat lista.txt`; do find "$i" -exec cp --parents {} /diretorio/destino \; ; done
+
+# =======================================================================================
+
+#### Convertendo encoding dos arquivos ##################################################
+
+# Checa encoding
+
+file --mime-encoding filename
+
+# Lista os encodings suportados
+
+iconv -l
+
+# Converte
+
+iconv -f old_encoding old_filename -t new_encoding -o new_filename
+
+# ========================================================================================
+
+#### Lista comandos mais utilizados ######################################################
+
+history | awk '{a[$2]++}END{for(i in a){print a[i] " " i}}' | sort -rn | head
+
+# ========================================================================================
+
+#### Remover entradas duplicadas de um arquivo sem reordenar as linhas na saída ##########
+
+awk '!x[$0]++' arquivo.txt
+
+# ========================================================================================
+
+#### Encontrar informação geográfica de um determinado endereço ip #######################
+
+lynx -dump http://www.ip-adress.com/ip_tracer/172.217.29.78 | awk '/IP country code/,/Local time in/' | tail -12 | sort | uniq -c | sort -n | awk {'print $2,$3,$4,$5,$6,$7,$8,$9'}
+
+# ========================================================================================
+
+#### Analisar o log de acesso do apache para os endereços IPs mais comuns ################
+
+tail -15000 access_log | awk '{print $1}' | sort | uniq -c | sort -n | tail
+
+# ========================================================================================
+
+#### Mostra rapidamente quais os usuários utilizaram o sistema recentemente ##############
+
+last  | grep -v "^$" | awk '{ print $1 }' | sort -nr | uniq -c
+
+# ========================================================================================
+
+#### Mostra o numero de conexões abertas por IP e as portas usadas #######################
+
+netstat -ntu | awk '{print $5}' | cut -d: -f1,2 | sort | uniq -c | sort -n
+
+# ========================================================================================
+
+#### Efetuar checagem dos seus e-mails não lidos do Gmail pela linha de comando
+
+curl -u username:password –silent "https://mail.google.com/mail/feed/atom” | tr -d '\n' | awk -F " '{for (i=2; i<=NF; i++) {print $i}}' | sed -n "s/\(.*\)<\/title.*name>\(.*\)<\/name>.*/\2 – \1/p"
+
+# ========================================================================================
+
+#### Listar o número e tipo de conexões de rede ativas
+
+netstat -ant | awk '{print $NF,$3,$4,$5}' | grep -v '[a-z]' | sort | uniq -c
+
+# ========================================================================================
+
+#### Mostra o tamanho dos diretórios, os maiores primeiro e divididos entre ‘Kb, Mb e Gb #
+
+du -d 1 | sort -r -n | awk '{split("KB(s) MB(s) GB(s)",v); s=1; while($1>1024){$1/=1024; s++} print int($1)" "v[s]"\t"$2}'
+
+# ========================================================================================
+
+#### Mostra se os arquivos de 2 diretórios são diferentes, excluindo alguns subdiretórios # 
+
+diff -EwbBqr --exclude="cache" --exclude=".git" --exclude="dumps" --exclude="integracao_externa" --exclude="jobs" --exclude="tmp" e-cidade/ e-cidade_breno/ > diff.txt
+
+# ========================================================================================
+
+#### Mata processos zumbis ############################################################### 
+
+sudo kill $(ps -A -ostat,ppid | awk '/[zZ]/{print $2}')
+
+# ========================================================================================
+
+#### Lê um arquivo linha a linha ######################################################### 
+
+while IFS='' read -r line || [[ -n "$line" ]]; do
+  echo "Texto: $line"
+done < "$1"
+
+Exemplo: ./nome-do-script nome-do-arquivo-lido
+
+# ========================================================================================
+
+#### Gera uma página html com o output do vimdiff ========================================
+
+vimdiff  file1.txt file2.txt -c TOhtml -c 'w! diff.html' -c 'qa!'
+
+# ========================================================================================
+
+#### Mostra o caractere de término da linha. Se \r\n = ^M$; se \n = $ ====================
+
+cat -e arquivo
+
+# ========================================================================================
+
+#### Vim: encontra cada ocorrência de 'foo' (em todas as linhas) e substitui por 'bar' ===
+
+:%s/foo/bar/g
+
+# ========================================================================================
+
+#### Vim: encontra cada ocorrência de 'foo' (apenas na linha atual) e substitui por 'bar'
+
+:s/foo/bar/g
+
+# ========================================================================================
+
+#### Remove o caracter '\r' do arquivo 'input.txt', criando um novo arquivo: output.txt ==
+
+tr -d '\r' < input.txt > output.txt
+
+# ========================================================================================
+
+#### Conta o número de colunas de um arquivo com separador (;). ==========================
+
+head -1 arquivo.txt | sed 's/[^;]//g' | wc -c
+
+# ========================================================================================
+
+#### Mostra a soma do tamanho dos arquivos no diretório ==================================
+
+du -ach /diretorio/
+
+# ========================================================================================
+
+#### Abre o arquivo credentials-config.json do Dbeaver para expor as credenciais =========
+
+openssl aes-128-cbc -d -K babb4a9f774ab853c96c2d653dfe544a -iv 00000000000000000000000000000000 -in credentials-config.json | dd bs=1 skip=16 2>/dev/null
+
+# ========================================================================================
+
+#### Removendo os resultados com "permission denied" =====================================
+
+grep -ril 'texto' /DSOP/PHP 2> /dev/null
+
+# ========================================================================================
+
+#### Zerando arquivo do seu conteúdo =====================================================
+
+echo -n > arquivo
+
+# ========================================================================================
+
+#### Pesquisando palavras repetidas no arquivo ===========================================
+
+cut -d" " -f1 file.txt | sort | uniq -d
+
+# ========================================================================================
