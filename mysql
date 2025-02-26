@@ -1,0 +1,36 @@
+-- Importa dados para o mysql
+
+LOAD DATA INFILE '/absolute/path/data.csv' 
+INTO TABLE tableName
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES;
+
+LOAD DATA LOCAL INFILE '/absolute/path/data.csv' 
+INTO TABLE tableName
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 LINES;
+
+-- Formata número com decimal
+
+SELECT REPLACE(REPLACE(REPLACE(FORMAT(10000000.5,2), ',', ':'), '.', ','), ':', '.') AS format;
+
+-- Retorna o tamanho da base
+
+SELECT 
+	table_schema 'DBName'
+	, ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) 'DBSize in MB' 
+FROM information_schema.tables 
+GROUP BY table_schema WITH ROLLUP;
+
+###
+
+SELECT 
+	table_name
+	, ROUND(data_length / 1024 / 1024) AS data_length_mb
+	, ROUND(data_free / 1024 / 1024) AS data_free_mb 
+FROM information_schema.tables 
+WHERE table_name in ('Table name')
