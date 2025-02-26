@@ -1,0 +1,50 @@
+#### Lista os arquivos modificados nos 2 últimos dias. ####
+
+git log --pretty=format: --name-only --since="2 days ago" | sort | uniq
+
+#### Lista as branchs em ordem crescente ####
+
+git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:cyan)%(refname:short)%(color:reset) - %(color:red)%(objectname:short)%(color:reset) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'
+
+#### Lista as branchs em ordem crescente (somente o nome das branchs) ####
+
+git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(color:cyan)%(refname:short)'
+
+#### Lista as 5 branchs mais recentes (somente o nome das branchs) ####
+
+git for-each-ref --count=5 --sort=-committerdate refs/heads/ --format='%(HEAD) %(color:cyan)%(refname:short)'
+
+#### Renomeia uma branch: certifique-se de estar na branch que desejas renomear ####
+
+git branch -m novo-nome
+
+#### Limpa o cache do repositório ####
+
+git rm -rf --cached .
+
+#### Troca da mensagem do commit ####
+
+git commit --amend -m "New commit message"
+
+#### Seleciona o log de uma data até outra ####
+
+git log --since='Jan 25 2023' --until='Jan 30 2023'
+
+### Mostrar um arquivo em um commit específico ###
+
+git show commit-hash:path/to/file
+
+git log main --first-parent --merges \
+        --pretty=format:"%h %<(10,trunc)%aN %C(white)%<(15)%ar%Creset %C(red bold)%<(15)%D%Creset %s"
+
+### Listando branches modificadas em ordem decrescente ###
+
+for k in $(git branch | perl -pe s/^..//); do echo -e $(git show --pretty=format:"%Cgreen%ci %Cblue%cr%Creset" $k -- | head -n 1)\\t$k; done | sort -r
+
+### Verificando se um commit específico existe em uma branch ###
+
+git branch --contains $COMMIT_ID
+
+### Procurando uma string pelas branchs ###
+
+git grep "string/regexp" $(git rev-list --all)
